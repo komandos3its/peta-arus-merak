@@ -7,10 +7,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-
-body{
-margin:0;
-}
+body{margin:0;}
 
 #map{
 height:100vh;
@@ -23,18 +20,8 @@ left:20px;
 background:white;
 padding:10px;
 font-size:14px;
-line-height:18px;
 box-shadow:0 0 6px rgba(0,0,0,0.3);
 }
-
-.legend i{
-width:18px;
-height:18px;
-float:left;
-margin-right:8px;
-opacity:0.9;
-}
-
 </style>
 
 </head>
@@ -42,14 +29,6 @@ opacity:0.9;
 <body>
 
 <div id="map"></div>
-
-<div class="legend">
-<b>Kecepatan Arus (m/s)</b><br>
-<i style="background:#2c7bb6"></i> < 0.2 <br>
-<i style="background:#abd9e9"></i> 0.2 – 0.4 <br>
-<i style="background:#fdae61"></i> 0.4 – 0.6 <br>
-<i style="background:#d7191c"></i> > 0.6
-</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -69,61 +48,67 @@ fetch("arus_merak_web.geojson")
 .then(res=>res.json())
 .then(data=>{
 
+let speeds=[]
+
+// hitung semua speed
 data.features.forEach(f=>{
+let u=f.properties.u
+let v=f.properties.v
+let s=Math.sqrt(u*u+v*v)
+speeds.push(s)
+})
 
-let lat = f.geometry.coordinates[1];
-let lon = f.geometry.coordinates[0];
-
-let u = f.properties.u;
-let v = f.properties.v;
-
-
-// hitung speed
-let speed = Math.sqrt(u*u + v*v);
+let minSpeed=Math.min(...speeds)
+let maxSpeed=Math.max(...speeds)
 
 
-// normalisasi arah
-let mag = Math.sqrt(u*u + v*v);
-let ux = u/mag;
-let vy = v/mag;
+// fungsi warna
+function getColor(speed){
 
+let t=(speed-minSpeed)/(maxSpeed-minSpeed)
 
-// panjang panah tetap
-let scale = 0.04;
+let r=Math.floor(255*t)
+let g=Math.floor(180*(1-t))
+let b=Math.floor(255*(1-t))
 
-let lat2 = lat + vy*scale;
-let lon2 = lon + ux*scale;
-
-
-// warna berdasarkan speed
-let color;
-
-if(speed < 0.2){
-color = "#2c7bb6";
-}
-else if(speed < 0.4){
-color = "#abd9e9";
-}
-else if(speed < 0.6){
-color = "#fdae61";
-}
-else{
-color = "#d7191c";
+return `rgb(${r},${g},${b})`
 }
 
 
 // gambar panah
+data.features.forEach(f=>{
+
+let lat=f.geometry.coordinates[1]
+let lon=f.geometry.coordinates[0]
+
+let u=f.properties.u
+let v=f.properties.v
+
+let speed=Math.sqrt(u*u+v*v)
+
+let mag=Math.sqrt(u*u+v*v)
+
+let ux=u/mag
+let vy=v/mag
+
+let scale=0.04
+
+let lat2=lat+vy*scale
+let lon2=lon+ux*scale
+
+let color=getColor(speed)
+
 L.polyline([
 [lat,lon],
 [lat2,lon2]
 ],{
 color:color,
 weight:2
-}).addTo(map);
+}).addTo(map)
 
-});
+})
 
-});
+})
 
 </script>
 
