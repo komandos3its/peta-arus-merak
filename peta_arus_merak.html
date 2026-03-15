@@ -7,9 +7,34 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
+
+body{
+margin:0;
+}
+
 #map{
 height:100vh;
 }
+
+.legend{
+position:absolute;
+bottom:20px;
+left:20px;
+background:white;
+padding:10px;
+font-size:14px;
+line-height:18px;
+box-shadow:0 0 6px rgba(0,0,0,0.3);
+}
+
+.legend i{
+width:18px;
+height:18px;
+float:left;
+margin-right:8px;
+opacity:0.9;
+}
+
 </style>
 
 </head>
@@ -17,6 +42,14 @@ height:100vh;
 <body>
 
 <div id="map"></div>
+
+<div class="legend">
+<b>Kecepatan Arus (m/s)</b><br>
+<i style="background:#2c7bb6"></i> < 0.2 <br>
+<i style="background:#abd9e9"></i> 0.2 – 0.4 <br>
+<i style="background:#fdae61"></i> 0.4 – 0.6 <br>
+<i style="background:#d7191c"></i> > 0.6
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -27,8 +60,9 @@ var map = L.map('map').setView([-5.9,105.9],10);
 
 // basemap
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
- attribution:'OpenStreetMap'
+ attribution:'© OpenStreetMap'
 }).addTo(map);
+
 
 // load geojson
 fetch("arus_merak_web.geojson")
@@ -43,21 +77,47 @@ let lon = f.geometry.coordinates[0];
 let u = f.properties.u;
 let v = f.properties.v;
 
-// hitung arah
-let angle = Math.atan2(v,u);
 
-// panjang panah
-let scale = 0.05;
+// hitung speed
+let speed = Math.sqrt(u*u + v*v);
 
-let lat2 = lat + v*scale;
-let lon2 = lon + u*scale;
+
+// normalisasi arah
+let mag = Math.sqrt(u*u + v*v);
+let ux = u/mag;
+let vy = v/mag;
+
+
+// panjang panah tetap
+let scale = 0.04;
+
+let lat2 = lat + vy*scale;
+let lon2 = lon + ux*scale;
+
+
+// warna berdasarkan speed
+let color;
+
+if(speed < 0.2){
+color = "#2c7bb6";
+}
+else if(speed < 0.4){
+color = "#abd9e9";
+}
+else if(speed < 0.6){
+color = "#fdae61";
+}
+else{
+color = "#d7191c";
+}
+
 
 // gambar panah
 L.polyline([
 [lat,lon],
 [lat2,lon2]
 ],{
-color:"red",
+color:color,
 weight:2
 }).addTo(map);
 
